@@ -36,6 +36,19 @@ def strip_followups_from_reply(text):
 def chat():
     user_message = request.json['message']
     chat_history = request.json.get('history', [])
+    lang_code = request.json.get('target_lang')
+    print("target lang", lang_code)
+
+    lang_native_names = {
+        "en": "English",
+        "hi": "Hindi",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "zh": "Chinese"
+    }
+
+    target_lang = lang_native_names.get(lang_code, "English")
 
     itinerary_match = re.search(r'(\d+)[-\s]?day', user_message.lower())
     is_itinerary = bool(itinerary_match)
@@ -43,15 +56,17 @@ def chat():
 
     if is_itinerary:
         system_prompt = (
+            f"{get_language_prompt(target_lang)}\n"
             f"You are a smart travel assistant. The user asked for a {days}-day travel itinerary. "
-            f"Reply with exactly {days} day(s). Start each day with '🗓️ Day X:' and include 3-5 short, emoji-rich bullet points per day. "
+            f"Reply in {target_lang}.Reply with exactly {days} day(s). Start each day with '🗓️ Day X:' and include 3-5 short, emoji-rich bullet points per day. "
             f"Use line breaks between each activity."
         )
     else:
         system_prompt = (
-            "You are a smart travel assistant. Respond briefly and clearly to travel questions using emojis and bullet points. "
-            "Always end your reply with 2–3 follow-up questions written clearly using bullet points (•). Example:\n• What’s the best time to visit?\n• Any unique dishes I should try?\n• budget for a trip?\n• Do I need a visa?"
-            "You are a helpful travel assistant. After every answer, provide 2–3 relevant follow-up questions using clear bullet points like:\n- Question 1?\n- Question 2?\n- Question 3?"
+            f"{get_language_prompt(target_lang)}\n"
+            f"You are a smart travel assistant. Answer in {target_lang}. Respond briefly and clearly to travel questions using emojis and bullet points. "
+            f"Answer in {target_lang}. Always end your reply with 2–3 follow-up questions written clearly using bullet points (•). Example:\n• What’s the best time to visit?\n• Any unique dishes I should try?\n• budget for a trip?\n• Do I need a visa?"
+            f"Answer in {target_lang}. You are a helpful travel assistant. After every answer, provide 2–3 relevant follow-up questions using clear bullet points like:\n- Question 1?\n- Question 2?\n- Question 3?"
             "Do not repeat the heading or mix with other text."
         )
 
@@ -119,6 +134,9 @@ def download_itinerary():
         download_name="travel_itinerary.pdf",
         mimetype='application/pdf'
     )
+
+def get_language_prompt(lang):
+    return f"You must answer only in {lang}. Do not use any other language including English. Never translate, just respond natively.."
 
 if __name__ == '__main__':
     app.run(debug=True)

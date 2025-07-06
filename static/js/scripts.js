@@ -11,6 +11,7 @@ document.getElementById("user-input").addEventListener("keydown", function (e) {
 
 function sendMessage(text = null) {
   const input = document.getElementById('user-input');
+  const lang = document.getElementById('language-select')?.value || 'English';
   const message = text || input.value.trim();
   if (!message) return;
 
@@ -30,7 +31,7 @@ function sendMessage(text = null) {
   fetch('/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history })
+    body: JSON.stringify({ message, history, target_lang: lang })
   })
     .then(res => res.json())
     .then(data => {
