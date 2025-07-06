@@ -22,13 +22,24 @@ body {
 }
 
 .chat-header {
-  background: #4CAF50;
+  display: flex;
+  justify-content: center;  /* Center contents */
+  align-items: center;
+  position: relative;
+  padding: 16px;
+  background-color: #4caf50;
   color: white;
-  padding: 12px;
-  text-align: center;
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: 0.5px;
+  font-size: 24px;
+  font-weight: bold;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+/* 🌍 Title specifically */
+.chat-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
 .chat-box {
@@ -124,4 +135,98 @@ body {
 .text div {
   font-size: 15px;
   line-height: 1.6;
+}
+
+/* Adding typing dots effects */
+
+.typing-dots {
+  display: inline-block;
+  width: 50px;
+  height: 20px;
+  position: relative;
+}
+
+.typing-dots span {
+  display: inline-block;
+  background-color: #ccc;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: 0 3px;
+  animation: bounce 1.2s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Adding toggle to position the switch at top-right */
+
+/* Theme toggle still in top-right of header */
+.theme-toggle {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+
+.theme-toggle input {
+  margin-left: 8px;
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+/* Adding dark mode theme */
+
+body.dark-mode {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+body.dark-mode .chat-box {
+  background-color: #1e1e1e;
+}
+
+body.dark-mode .message.bot .text {
+  background-color: #333;
+  color: #fff;
+}
+
+body.dark-mode .message.user .text {
+  background-color: #007bff;
+}
+
+/* whatsapp like chatting */
+
+.message.bot .text {
+  background-color: #f0f0f0;
+  color: #000;
+  border-radius: 10px 10px 10px 0;
+  padding: 10px;
+}
+
+.message.user .text {
+  background-color: #0084ff;
+  color: #fff;
+  border-radius: 10px 10px 0 10px;
+  padding: 10px;
+  margin-left: auto;
 }

@@ -7,10 +7,16 @@
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">🌍 TravelBot</div>
+    <div class="chat-header">
+      <span>🌍 TravelBot</span>
+      <!-- 🌗 Theme toggle added here -->
+      <label class="theme-toggle">
+        🌞 / 🌙 <input type="checkbox" id="theme-switch">
+      </label>
+    </div>
     <div id="chat-box" class="chat-box"></div>
     <div class="input-container">
-      <input type="text" id="user-input" placeholder="Ask me about your travel plans..." />
+      <input type="text" id="user-input" placeholder="✈️ Ask me about your travel plans..." />
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
