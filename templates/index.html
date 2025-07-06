@@ -26,6 +26,7 @@
         </select>
       <input type="text" id="user-input" placeholder="✈️ Ask me about your travel plans..." />
       <button onclick="sendMessage()">Send</button>
+      <button onclick="startSpeechRecognition()" title="Speak"><img src="/static/mic-icon.png" alt="Mic" style="width: 20px;"></button>
     </div>
   </div>
   <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>

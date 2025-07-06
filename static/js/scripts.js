@@ -141,3 +141,32 @@ function downloadPDF(itineraryText) {
     window.URL.revokeObjectURL(url);
   });
 }
+
+// Speech recognition
+
+function startSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Speech recognition is not supported in this browser.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-IN';  // You can dynamically set this based on selected language
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('user-input').value = transcript;
+    sendMessage(); // auto-submit after speech
+  };
+
+  recognition.onerror = function (event) {
+    console.error("Speech recognition error:", event.error);
+    alert("Speech recognition error: " + event.error);
+  };
+
+  recognition.start();
+}
