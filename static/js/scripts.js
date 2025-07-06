@@ -1,48 +1,52 @@
-// Switch logic
 document.getElementById('theme-switch').addEventListener('change', function () {
   document.body.classList.toggle('dark-mode');
 });
 
-// Add logic for Enter key
 document.getElementById("user-input").addEventListener("keydown", function (e) {
   if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault(); // prevent newline
+    e.preventDefault();
     sendMessage();
   }
 });
 
-function sendMessage() {
+function sendMessage(text = null) {
   const input = document.getElementById('user-input');
-  const message = input.value.trim();
+  const message = text || input.value.trim();
   if (!message) return;
 
   appendMessage('user', message);
-  input.value = ''; // clear input
-  input.disabled = true; // temporarily disable to prevent double send
-  showTyping(); // optional: show typing animation
+  input.value = '';
+  input.disabled = true;
+  showTyping();
+
+  const history = [];
+  const messages = document.querySelectorAll('.message');
+  messages.forEach(msg => {
+    const role = msg.classList.contains('user') ? 'user' : 'assistant';
+    const content = msg.querySelector('.text')?.innerText.trim();
+    if (content) history.push({ role, content });
+  });
+
   fetch('/chat', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({message})
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history })
   })
-  .then(res => res.json())
-  .then(
-      data => {
-        hideTyping();
-        appendMessage('bot', data.reply);
-        input.disabled = false;
-        input.focus(); // return focus to input
-      })
-  .catch(err => {
-    console.error('Error:', err);
-    hideTyping();
-    appendMessage('bot', '⚠️ Something went wrong. Please try again.');
-    input.disabled = false;
-    input.focus();
-  });
+    .then(res => res.json())
+    .then(data => {
+      hideTyping();
+      appendMessage('bot', data.reply, data.followups);
+      input.disabled = false;
+      input.focus();
+    })
+    .catch(err => {
+      hideTyping();
+      appendMessage('bot', '⚠️ Something went wrong.');
+      input.disabled = false;
+      input.focus();
+    });
 }
 
-// Show Typing
 function showTyping() {
   const chatBox = document.getElementById('chat-box');
   const typingDiv = document.createElement('div');
@@ -50,9 +54,7 @@ function showTyping() {
   typingDiv.id = 'typing-indicator';
   typingDiv.innerHTML = `
     <img class="avatar" src="/static/bot.png">
-    <div class="text typing-dots">
-      <span></span><span></span><span></span>
-    </div>`;
+    <div class="text typing-dots"><span></span><span></span><span></span></div>`;
   chatBox.appendChild(typingDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -62,27 +64,44 @@ function hideTyping() {
   if (typing) typing.remove();
 }
 
-function appendMessage(sender, text) {
+function appendMessage(sender, text, followups = []) {
   const chatBox = document.getElementById('chat-box');
   const msgDiv = document.createElement('div');
   msgDiv.className = `message ${sender}`;
 
   let formattedText = text;
 
-  if (sender === 'bot') {
-    const isItinerary = /🗓️ Day \d:/g.test(text);
+  // 🧠 Remove follow-up questions from text if they exist
+  if (sender === 'bot' && followups && followups.length) {
+    const escapedFollowups = followups.map(q =>
+      q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    const followupRegex = new RegExp(`(?:^|\\n)[•\\-]?\\s*(${escapedFollowups.join('|')})`, 'gi');
+    formattedText = text.replace(followupRegex, '').trim();
+  }
 
+  if (sender === 'bot') {
+    const isItinerary = /🗓️ Day \d:/g.test(formattedText);
     if (isItinerary) {
-      // Format day headings and each activity with spacing
-      formattedText = text
+      formattedText = formattedText
         .replace(/🗓️ Day \d:/g, match => `<h4>${match}</h4>`)
         .replace(/\n{2,}/g, '<br>')
         .replace(/\n/g, '</div><div style="margin-bottom: 8px;">')
         .replace(/^/, '<div style="margin-bottom: 8px;">')
         .concat('</div>');
     } else {
-      // For general responses, preserve line breaks and bullets
-      formattedText = text.replace(/\n/g, '<br>');
+      formattedText = formattedText.replace(/\n/g, '<br>');
+    }
+
+    // 🧠 Create follow-up buttons only
+    if (followups.length) {
+      const old = document.querySelectorAll('.followup-container');
+      old.forEach(e => e.remove());
+
+      const buttons = followups.map(q =>
+        `<button class="followup-btn" onclick="sendMessage('${q}')">${q}</button>`
+      ).join('');
+      formattedText += `<div class="followup-container">${buttons}</div>`;
     }
   }
 
