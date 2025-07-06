@@ -3,6 +3,10 @@ import re
 import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
+from flask import send_file
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import io
 
 load_dotenv()
 app = Flask(__name__)
@@ -85,6 +89,36 @@ def chat():
         "reply": cleaned_reply,
         "followups": followup_suggestions
     })
+
+@app.route('/download-itinerary', methods=['POST'])
+def download_itinerary():
+    data = request.json
+    itinerary_text = data.get("itinerary", "No itinerary provided.")
+
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+
+    lines = itinerary_text.split("\n")
+    y = height - 40
+
+    for line in lines:
+        pdf.drawString(50, y, line.strip())
+        y -= 15
+        if y < 50:
+            pdf.showPage()
+            y = height - 40
+
+    pdf.save()
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="travel_itinerary.pdf",
+        mimetype='application/pdf'
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -89,6 +89,14 @@ function appendMessage(sender, text, followups = []) {
         .replace(/\n/g, '</div><div style="margin-bottom: 8px;">')
         .replace(/^/, '<div style="margin-bottom: 8px;">')
         .concat('</div>');
+
+      // Add a download button below the itinerary
+      formattedText += `
+        <div style="margin-top: 12px;">
+          <button class="download-btn" onclick="downloadPDF(\`${text}\`)">
+            📄 Download Itinerary as PDF
+          </button>
+        </div>`;
     } else {
       formattedText = formattedText.replace(/\n/g, '<br>');
     }
@@ -110,4 +118,25 @@ function appendMessage(sender, text, followups = []) {
     <div class="text">${formattedText}</div>`;
   chatBox.appendChild(msgDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// download Itinerary option
+
+function downloadPDF(itineraryText) {
+  fetch('/download-itinerary', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ itinerary: itineraryText })
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'travel_itinerary.pdf';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  });
 }
