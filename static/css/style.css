@@ -21,10 +21,11 @@ body {
   overflow: hidden;
 }
 
+/* Header Container */
 .chat-header {
   display: flex;
-  justify-content: center;  /* Center contents */
-  align-items: center;
+  justify-content: center;
+  align-items: flex-start;
   position: relative;
   padding: 16px;
   background-color: #4caf50;
@@ -35,11 +36,42 @@ body {
   border-top-right-radius: 10px;
 }
 
-/* 🌍 Title specifically */
+/* Chat Title (centered text) */
 .chat-title {
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 1px;
+}
+
+
+/* Right-side user controls */
+.chat-controls {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+/* Login/Logout text */
+.user-auth {
+  font-size: 14px;
+  margin-top: 12px;
+  margin-left: 4px;
+}
+
+.user-auth a {
+  color: white;
+  text-decoration: underline;
+  margin: 0 4px;
+}
+
+/* Theme toggle label */
+.theme-toggle {
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .chat-box {
@@ -181,11 +213,10 @@ body {
 
 /* Theme toggle still in top-right of header */
 .theme-toggle {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
   font-size: 14px;
+  cursor: pointer;
+  /* REMOVE position, right, top, transform */
+  margin-top: 4px;
 }
 
 .theme-toggle input {
@@ -270,4 +301,60 @@ body.dark-mode .message.user .text {
 
 .download-btn:hover {
   background-color: #2563eb;
+}
+
+
+/* Centered form container */
+.form-container {
+  max-width: 400px;
+  margin: 80px auto;
+  background: #f4f4f4;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: sans-serif;
+}
+
+/* Input fields */
+.form-container input[type="text"],
+.form-container input[type="email"],
+.form-container input[type="password"] {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+/* Submit button */
+.form-container button {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.form-container button:hover {
+  background-color: #45a049;
+}
+
+/* Link below form */
+.form-container p {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.form-container a {
+  color: #4caf50;
+  text-decoration: underline;
+}
+
+.flash-messages {
+  color: red;
+  margin: 10px;
+  list-style-type: none;
 }

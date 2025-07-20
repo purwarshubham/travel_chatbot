@@ -8,11 +8,23 @@
 <body>
   <div class="chat-container">
     <div class="chat-header">
-      <span>🌍 TravelBot</span>
-      <!-- 🌗 Theme toggle added here -->
-      <label class="theme-toggle">
-        🌞 / 🌙 <input type="checkbox" id="theme-switch">
-      </label>
+      <!-- Centered Title -->
+      <div class="chat-title">🌍 TravelBot</div>
+
+      <!-- Right corner: user auth + theme toggle -->
+      <div class="chat-controls">
+        <div class="theme-toggle">
+          🌞 / 🌙 <input type="checkbox" id="theme-switch">
+        </div>
+        <div class="user-auth">
+          {% if username %}
+            <!--👋 Hi, <strong>{{ username }}</strong> | -->
+            <a href="/logout">Logout</a>
+          {% else %}
+            <a href="/login">Login</a> | <a href="/register">Signup</a>
+          {% endif %}
+        </div>
+      </div>
     </div>
     <div id="chat-box" class="chat-box"></div>
     <div class="input-container">

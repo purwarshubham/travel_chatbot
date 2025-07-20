@@ -1,22 +1,80 @@
 import os
 import re
 import requests
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from dotenv import load_dotenv
 from flask import send_file
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import io
 
 load_dotenv()
 app = Flask(__name__)
+app.secret_key = "your_dev_secret_123"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html', username=session.get('username'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email already registered.')
+            return redirect(url_for('register'))
+
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(username=username, email=email, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registration successful! Please login.')
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            flash('Login successful!')
+            return redirect(url_for('index'))
+        else:
+            flash('❌ Invalid email or password. Please try again or register.')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    #flash('Logged out.')
+    return redirect(url_for('login'))
 
 def extract_followups(text):
-    # Match lines that are follow-up questions (bullets or standalone)
     lines = text.splitlines()
     followups = []
     for line in lines:
@@ -34,6 +92,9 @@ def strip_followups_from_reply(text):
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    if 'user_id' not in session:
+        return jsonify({"reply": "❌ Please login first."}), 401
+
     user_message = request.json['message']
     chat_history = request.json.get('history', [])
     lang_code = request.json.get('target_lang')
@@ -65,9 +126,7 @@ def chat():
         system_prompt = (
             f"{get_language_prompt(target_lang)}\n"
             f"You are a smart travel assistant. Answer in {target_lang}. Respond briefly and clearly to travel questions using emojis and bullet points. "
-            f"Answer in {target_lang}. Always end your reply with 2–3 follow-up questions written clearly using bullet points (•). Example:\n• What’s the best time to visit?\n• Any unique dishes I should try?\n• budget for a trip?\n• Do I need a visa?"
-            f"Answer in {target_lang}. You are a helpful travel assistant. After every answer, provide 2–3 relevant follow-up questions using clear bullet points like:\n- Question 1?\n- Question 2?\n- Question 3?"
-            "Do not repeat the heading or mix with other text."
+            f"Always end your reply with 2–3 follow-up questions written clearly using bullet points (•)."
         )
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -95,7 +154,6 @@ def chat():
         response.raise_for_status()
         full_reply = response.json()["choices"][0]["message"]["content"]
         followup_suggestions = extract_followups(full_reply)
-        # Remove follow-up section from reply before displaying
         cleaned_reply = strip_followups_from_reply(full_reply)
     except Exception as e:
         return jsonify({"reply": f"❌ Failed to fetch response: {str(e)}"}), 500
@@ -107,10 +165,12 @@ def chat():
 
 @app.route('/download-itinerary', methods=['POST'])
 def download_itinerary():
+    if 'user_id' not in session:
+        return jsonify({"error": "Login required to download itinerary"}), 401
+
     data = request.json
     itinerary_text = data.get("itinerary", "No itinerary provided.")
 
-    # Create PDF in memory
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
