@@ -24,11 +24,21 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
+class ChatHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    role = db.Column(db.String(10))
+    message = db.Column(db.Text)
+
 @app.route('/')
 def index():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session.get('username'))
+
+    # Fetch last 10 chat history messages for the logged-in user
+    chats = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.asc()).limit(20).all()
+
+    return render_template('index.html', username=session.get('username'), chats=chats)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -64,14 +74,14 @@ def login():
             flash('Login successful!')
             return redirect(url_for('index'))
         else:
-            flash('❌ Invalid email or password. Please try again or register.')
+            flash('Invalid credentials or user not registered.')
 
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    #flash('Logged out.')
+    flash('Logged out.')
     return redirect(url_for('login'))
 
 def extract_followups(text):
@@ -96,7 +106,6 @@ def chat():
         return jsonify({"reply": "❌ Please login first."}), 401
 
     user_message = request.json['message']
-    chat_history = request.json.get('history', [])
     lang_code = request.json.get('target_lang')
     print("target lang", lang_code)
 
@@ -129,9 +138,14 @@ def chat():
             f"Always end your reply with 2–3 follow-up questions written clearly using bullet points (•)."
         )
 
+    # Fetch recent chat history from DB
+    chat_history_entries = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(ChatHistory.id.desc()).limit(10).all()
+    chat_history_entries = list(reversed(chat_history_entries))
+
     messages = [{"role": "system", "content": system_prompt}]
-    for item in chat_history:
-        messages.append({"role": item["role"], "content": item["content"]})
+    for entry in chat_history_entries:
+        messages.append({"role": entry.role, "content": entry.message})
+
     messages.append({"role": "user", "content": user_message})
 
     api_key = os.getenv("OPENROUTER_API_KEY")
@@ -157,6 +171,11 @@ def chat():
         cleaned_reply = strip_followups_from_reply(full_reply)
     except Exception as e:
         return jsonify({"reply": f"❌ Failed to fetch response: {str(e)}"}), 500
+
+    # Save current interaction to DB
+    db.session.add(ChatHistory(user_id=session['user_id'], role='user', message=user_message))
+    db.session.add(ChatHistory(user_id=session['user_id'], role='assistant', message=cleaned_reply))
+    db.session.commit()
 
     return jsonify({
         "reply": cleaned_reply,

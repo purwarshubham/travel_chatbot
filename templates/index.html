@@ -26,7 +26,17 @@
         </div>
       </div>
     </div>
-    <div id="chat-box" class="chat-box"></div>
+    <div id="chat-box" class="chat-box">
+      {% if chats %}
+        {% for chat in chats %}
+          <div class="message {{ 'user' if chat.role == 'user' else 'bot' }}">
+            <div class="text">
+              {{ chat.message }}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
     <div class="input-container">
         <select id="language-select" title="Choose language">
           <option value="en">🇬🇧 English</option>
